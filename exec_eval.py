@@ -24,17 +24,33 @@ def permute_tuple(element: Tuple, perm: Tuple) -> Tuple:
     return tuple([element[i] for i in perm])
 
 
-def unorder_row(row: Tuple) -> Tuple:
-    return tuple(sorted(row, key=lambda x: str(x) + str(type(x))))
+def unorder_row(row: Tuple, round_values: bool = False, decimal_places: int = 4) -> Tuple:
+    """
+    对行进行排序，支持数值舍入
+    
+    Args:
+        row: 行数据
+        round_values: 是否对数值进行舍入
+        decimal_places: 小数位数（默认4位）
+    """
+    def sort_key(x):
+        # 如果启用舍入且是数值类型，进行舍入处理
+        if round_values and isinstance(x, (int, float)):
+            rounded_value = round(float(x), decimal_places)
+            return str(rounded_value) + str(type(x))
+        return str(x) + str(type(x))
+    
+    return tuple(sorted(row, key=sort_key))
 
 
 # unorder each row in the table
 # [result_1 and result_2 has the same bag of unordered row]
 # is a necessary condition of
 # [result_1 and result_2 are equivalent in denotation]
-def quick_rej(result1: List[Tuple], result2: List[Tuple], order_matters: bool) -> bool:
-    s1 = [unorder_row(row) for row in result1]
-    s2 = [unorder_row(row) for row in result2]
+def quick_rej(result1: List[Tuple], result2: List[Tuple], order_matters: bool, 
+              round_values: bool = False, decimal_places: int = 4) -> bool:
+    s1 = [unorder_row(row, round_values, decimal_places) for row in result1]
+    s2 = [unorder_row(row, round_values, decimal_places) for row in result2]
     if order_matters:
         return s1 == s2
     else:
@@ -73,7 +89,8 @@ def get_constraint_permutation(tab1_sets_by_columns: List[Set], result2: List[Tu
 
 
 # check whether two denotations are correct
-def result_eq(result1: List[Tuple], result2: List[Tuple], order_matters: bool) -> bool:
+def result_eq(result1: List[Tuple], result2: List[Tuple], order_matters: bool,
+              round_values: bool = False, decimal_places: int = 4) -> bool:
     if len(result1) == 0 and len(result2) == 0:
         return True
 
@@ -89,7 +106,7 @@ def result_eq(result1: List[Tuple], result2: List[Tuple], order_matters: bool) -
 
     # unorder each row and compare whether the denotation is the same
     # this can already find most pair of denotations that are different
-    if not quick_rej(result1, result2, order_matters):
+    if not quick_rej(result1, result2, order_matters, round_values, decimal_places):
         return False
 
     # the rest of the problem is in fact more complicated than one might think
@@ -194,7 +211,9 @@ def postprocess(query: str) -> str:
 # 0 if denotationally equivalent
 # 1 otherwise
 # the meaning of each auxillary argument can be seen in the parser definition in evaluation.py
-def eval_exec_match(db: str, p_str: str, g_str: str, plug_value: bool, keep_distinct: bool, progress_bar_for_each_datapoint: bool) -> int:
+def eval_exec_match(db: str, p_str: str, g_str: str, plug_value: bool, keep_distinct: bool, 
+                    progress_bar_for_each_datapoint: bool, round_values: bool = False, 
+                    decimal_places: int = 4) -> int:
     p_str, g_str = postprocess(p_str), postprocess(g_str)
 
     order_matters = 'order by' in g_str.lower()
@@ -217,7 +236,8 @@ def eval_exec_match(db: str, p_str: str, g_str: str, plug_value: bool, keep_dist
 
             if p_flag == 'exception':
                 pred_passes = 0
-            elif not result_eq(g_denotation, p_denotation, order_matters=order_matters):
+            elif not result_eq(g_denotation, p_denotation, order_matters=order_matters, 
+                             round_values=round_values, decimal_places=decimal_places):
                 pred_passes = 0
             
             if pred_passes == 0:

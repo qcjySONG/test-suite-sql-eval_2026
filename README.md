@@ -4,7 +4,7 @@
 
 **DO NOT use this tool to evaluate BIRD-SQL dataset in academic papers or publications!**
 
-This tool implements a **column order flexible** evaluation metric that differs significantly from the official BIRD-SQL EX metric. Using this tool for BIRD-SQL evaluation would create **unfair comparison** and **misleading results**, similar to a "阴阳合同" (dual contract) situation.
+This tool implements a **column order flexible** evaluation metric that differs significantly from the official BIRD-SQL EX metric. Using this tool for BIRD-SQL evaluation would create **unfair comparison** and **misleading results**.
 
 **Why this is problematic:**
 - This tool accepts queries with different column orders as correct
@@ -197,6 +197,8 @@ python3 evaluation.py \
 | `--keep_distinct` | flag | ❌ | Keep DISTINCT keyword during evaluation |
 | `--progress_bar_for_each_datapoint` | flag | ❌ | Show progress bar for each datapoint |
 | `--timeout` | integer | ❌ | Timeout in seconds for each query execution (default: 30) |
+| `--round_values` | flag | ❌ | Whether to round numeric values for comparison |
+| `--decimal_places` | integer | ❌ | Number of decimal places for rounding (default: 4) |
 
 ### Parameter Details
 
@@ -243,6 +245,16 @@ python3 evaluation.py \
 - **Type**: Integer
 - **Default**: 30
 - **Description**: Timeout in seconds for each query execution. Increase this value for complex queries or slow databases.
+
+#### `--round_values` (Optional)
+- **Type**: Boolean flag
+- **Default**: False
+- **Description**: Enable rounding of numeric values during comparison. When enabled, all numeric values (integers and floats) will be rounded to the specified number of decimal places before comparison. This is useful when comparing floating-point results that may have minor precision differences.
+
+#### `--decimal_places` (Optional)
+- **Type**: Integer
+- **Default**: 4
+- **Description**: Number of decimal places for rounding numeric values. Only effective when `--round_values` is enabled. For example, with `--decimal_places 4`, the value `3.14159265` will be rounded to `3.1416`.
 
 ## Output Format
 

@@ -585,7 +585,8 @@ def get_table_level(table_count):
     else:
         return 'five_plus'
 
-def evaluate(input_file, db_dir, etype, kmaps, plug_value, keep_distinct, progress_bar_for_each_datapoint, timeout=30):
+def evaluate(input_file, db_dir, etype, kmaps, plug_value, keep_distinct, 
+             progress_bar_for_each_datapoint, timeout=30, round_values=False, decimal_places=4):
     """
     修改后的 evaluate 函数
     :param input_file: 包含 gold 和 predict 的 json 文件路径
@@ -693,7 +694,8 @@ def evaluate(input_file, db_dir, etype, kmaps, plug_value, keep_distinct, progre
 
             if etype in ["all", "exec"]:
                 exec_score = eval_exec_match(db=db, p_str=p_str, g_str=g_str, plug_value=plug_value,
-                                             keep_distinct=keep_distinct, progress_bar_for_each_datapoint=progress_bar_for_each_datapoint)
+                                             keep_distinct=keep_distinct, progress_bar_for_each_datapoint=progress_bar_for_each_datapoint,
+                                             round_values=round_values, decimal_places=decimal_places)
                 if exec_score:
                     scores[hardness]['exec'] += 1
                     scores[turn_idx_str]['exec'] += 1
@@ -1046,6 +1048,10 @@ if __name__ == "__main__":
                         help='whether to print progress bar')
     parser.add_argument('--timeout', dest='timeout', type=int, default=30,
                         help='timeout in seconds for each query execution (default: 30)')
+    parser.add_argument('--round_values', default=False, action='store_true',
+                        help='whether to round numeric values for comparison')
+    parser.add_argument('--decimal_places', dest='decimal_places', type=int, default=4,
+                        help='number of decimal places for rounding (default: 4)')
     args = parser.parse_args()
 
     # 准备 Foreign Key Maps (仅在 match 模式下需要)
@@ -1055,38 +1061,5 @@ if __name__ == "__main__":
         kmaps = build_foreign_key_map_from_json(args.table)
 
     # 变动2：调用 evaluate 时只传 args.input，不再传 gold 和 pred
-    evaluate(args.input, args.db, args.etype, kmaps, args.plug_value, args.keep_distinct, args.progress_bar_for_each_datapoint, args.timeout)
-
-
-'''
-python3 evaluation.py \
-    --input /amax/storage/qcjySONG/EHRSQL/EHRSQL_KG/Result/Ministral_T_unique.json \
-    --db /amax/storage/qcjySONG/EHRSQL/raw_dataset/EHR_DB \
-    --table /amax/storage/qcjySONG/EHRSQL/raw_dataset/EHR_DB/mimic_iv/tables.json \
-    --etype exec \
-    --progress_bar_for_each_datapoint
-
-
-python3 evaluation.py \
-    --input /amax/storage/nfs/qcjySONG/EHR24/output_json/4B_Close_TEST_SUCCESS_ag_2.json \
-    --db /amax/storage/qcjySONG/EHRSQL/raw_dataset/EHR_DB \
-    --table /amax/storage/qcjySONG/EHRSQL/raw_dataset/EHR_DB/mimic_iv/tables.json \
-    --etype exec \
-    --progress_bar_for_each_datapoint
-
-
-
-## Nor
-4B: 0.484
-4B_OSS: 0.593
-4B_Close_2: 0.609
-4B_Close_2_ag: 0.623 #宣传
-4B_Close_2_ag_2: 0.626
-
-
-                     easy                 medium               hard                 extra                all                 
-count                26                   7                    16                   657                  706                 
-=====================   EXECUTION ACCURACY     =====================
-execution            1.000                0.286                0.750                0.609                0.623  
-
-'''
+    evaluate(args.input, args.db, args.etype, kmaps, args.plug_value, args.keep_distinct, 
+             args.progress_bar_for_each_datapoint, args.timeout, args.round_values, args.decimal_places)
